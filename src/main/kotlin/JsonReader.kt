@@ -6,29 +6,31 @@ import java.io.IOException
 class JsonReader {
     companion object {
         @DslMarker
+        annotation class JsonReaderItemMarker
+
+        @DslMarker
         annotation class JsonReaderObjMarker
 
         @DslMarker
         annotation class JsonReaderArrMarker
 
-        fun readObject(jsonParser: JsonParser, configureBlock: JsonReader.Obj.() -> Unit) {
-            val reader = JsonReader.Obj()
+        fun read(jsonParser: JsonParser, configureBlock: JsonReader.Item.() -> Unit) {
+            val reader = JsonReader.Item()
             reader.configureBlock()
-            if (jsonParser.currentToken() != JsonToken.START_OBJECT) {
-                if (jsonParser.nextToken() != JsonToken.START_OBJECT) {
-                    throw IOException("Error: START_OBJECT expected.")
+            if (null != reader.objBlockReader) {
+                if (jsonParser.currentToken() != JsonToken.START_OBJECT) {
+                    if (jsonParser.nextToken() != JsonToken.START_OBJECT) {
+                        throw IOException("Error: START_OBJECT expected.")
+                    }
                 }
-            }
-            reader.read(jsonParser)
-        }
-
-        fun readArray(jsonParser: JsonParser, configureBlock: JsonReader.Arr.() -> Unit) {
-            val reader = JsonReader.Arr()
-            reader.configureBlock()
-            if (jsonParser.currentToken() != JsonToken.START_ARRAY) {
-                if (jsonParser.nextToken() != JsonToken.START_ARRAY) {
-                    throw IOException("Error: START_ARRAY expected.")
+            } else if (null != reader.arrBlockReader) {
+                if (jsonParser.currentToken() != JsonToken.START_ARRAY) {
+                    if (jsonParser.nextToken() != JsonToken.START_ARRAY) {
+                        throw IOException("Error: START_ARRAY expected.")
+                    }
                 }
+            } else {
+                throw IOException("Error: 'objct {...}' or 'array {...}' configure block expected.")
             }
             reader.read(jsonParser)
         }
@@ -38,23 +40,11 @@ class JsonReader {
         }
     }
 
-
-    @JsonReaderArrMarker
-    class Arr {
+    @JsonReaderItemMarker
+    class Item {
         private var valueBlockReader: (JsonParser.() -> Unit)? = null
-        private var objBlockReader: Obj? = null
-        private var arrBlockReader: Arr? = null
-
-        private var onStartReadBlock: (() -> Unit)? = null
-        private var onFinishReadBlock: (() -> Unit)? = null
-
-        fun onStartRead(function: () -> Unit) {
-            onStartReadBlock = function
-        }
-
-        fun onFinishRead(function: () -> Unit) {
-            onFinishReadBlock = function
-        }
+        internal var objBlockReader: Obj? = null
+        internal var arrBlockReader: Arr? = null
 
         fun value(readerBlock: JsonParser.() -> Unit) {
             valueBlockReader = readerBlock
@@ -69,26 +59,58 @@ class JsonReader {
         }
 
         fun read(jsonParser: JsonParser) {
+            log("read i0 ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
+            if (null != valueBlockReader) {
+                valueBlockReader?.invoke(jsonParser)
+            } else {
+                if (null != objBlockReader) {
+                    objBlockReader?.read(jsonParser)
+                } else {
+                    if (null != arrBlockReader) {
+                        arrBlockReader?.read(jsonParser)
+                    } else {
+                        jsonParser.skipChildren()
+                    }
+                }
+            }
+        }
+    }
+
+    @JsonReaderArrMarker
+    class Arr {
+        private var onStartReadBlock: (() -> Unit)? = null
+        private var onFinishReadBlock: (() -> Unit)? = null
+
+        private var itemReader = Item()
+
+        fun onStartRead(function: () -> Unit) {
+            onStartReadBlock = function
+        }
+
+        fun onFinishRead(function: () -> Unit) {
+            onFinishReadBlock = function
+        }
+
+        fun value(readerBlock: JsonParser.() -> Unit) {
+            itemReader.value(readerBlock)
+        }
+
+        fun objct(configureBlock: Obj.() -> Unit) {
+            itemReader.objct(configureBlock)
+        }
+
+        fun array(configureBlock: Arr.() -> Unit) {
+            itemReader.array(configureBlock)
+        }
+
+        fun read(jsonParser: JsonParser) {
             if (jsonParser.currentToken() != JsonToken.START_ARRAY) {
                 throw IOException("Error: START_ARRAY expected.")
             }
             log("read a0 ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
             onStartReadBlock?.invoke()
             while (jsonParser.nextToken() != JsonToken.END_ARRAY) {
-                log("read av ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
-                if (null != valueBlockReader) {
-                    valueBlockReader?.invoke(jsonParser)
-                } else {
-                    if (null != objBlockReader) {
-                        objBlockReader?.read(jsonParser)
-                    } else {
-                        if (null != arrBlockReader) {
-                            arrBlockReader?.read(jsonParser)
-                        } else {
-                            jsonParser.skipChildren()
-                        }
-                    }
-                }
+                itemReader.read(jsonParser)
             }
             onFinishReadBlock?.invoke()
         }
@@ -96,11 +118,18 @@ class JsonReader {
 
     @JsonReaderObjMarker
     class Obj {
-        private val map = hashMapOf<String, JsonParser.() -> Unit>()
-        private val mapObj = hashMapOf<String, Obj>()
-        private val mapArr = hashMapOf<String, Arr>()
-
+        private val map = hashMapOf<String, Item>()
         private var onStartReadBlock: ((String) -> Unit)? = null
+
+        private fun itemReader(name: String): Item {
+            var result = map[name]
+            if (result == null) {
+                result = Item()
+                map[name] = result
+            }
+            return result
+        }
+
         private var onFinishReadBlock: ((String) -> Unit)? = null
 
         fun onStartRead(function: (String) -> Unit) {
@@ -112,15 +141,15 @@ class JsonReader {
         }
 
         fun value(name: String, readerBlock: JsonParser.() -> Unit) {
-            map[name] = readerBlock
+            itemReader(name).value(readerBlock)
         }
 
         fun objct(name: String, configureBlock: Obj.() -> Unit) {
-            mapObj[name] = Obj().apply { configureBlock() }
+            itemReader(name).objct(configureBlock)
         }
 
         fun array(name: String, configureBlock: Arr.() -> Unit) {
-            mapArr[name] = Arr().apply { configureBlock() }
+            itemReader(name).array(configureBlock)
         }
 
         fun read(jsonParser: JsonParser) {
@@ -128,28 +157,18 @@ class JsonReader {
                 throw IOException("Error: START_OBJECT expected.")
             }
             log("read o0 ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
-            val thisFieldName = jsonParser.getCurrentName() ?: ""
+            val thisFieldName = jsonParser.currentName ?: ""
             onStartReadBlock?.invoke(thisFieldName)
             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
-                val fieldName = jsonParser.getCurrentName()
+                val fieldName = jsonParser.currentName
                 log("read  of ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
                 jsonParser.nextToken()
                 log("read ov ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
-                val valueReader = map[fieldName]
-                if (null != valueReader) {
-                    jsonParser.valueReader()
+                val itemReader = map[fieldName]
+                if (null != itemReader) {
+                    itemReader.read(jsonParser)
                 } else {
-                    val objectReader = mapObj[fieldName]
-                    if (null != objectReader) {
-                        objectReader.read(jsonParser)
-                    } else {
-                        val arrReader = mapArr[fieldName]
-                        if (null != arrReader) {
-                            arrReader.read(jsonParser)
-                        } else {
-                            jsonParser.skipChildren()
-                        }
-                    }
+                    jsonParser.skipChildren()
                 }
             }
             onFinishReadBlock?.invoke(thisFieldName)

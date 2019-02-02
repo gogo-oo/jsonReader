@@ -67,33 +67,31 @@ class JsonReaderUnitTest {
                 val arr02: MutableList<Pair<String, Int>> = mutableListOf()
         )
 
-        JsonReader.readObject(JsonFactory().createParser(str)) {
-            objct("rootObj") {
-                //            value("rootObj") {
-//                JsonReader.readObject(this) {
-
-                val to = TempObject()
-                var f02: Int = -1
-                value("strVal01") { to.strVal01 = getValueAsString("") }
-                array("strArr01") { value { to.arr01.add(getValueAsString("")) } }
-                array("objArr01") {
-                    var f01: String = ""
+        JsonReader.read(JsonFactory().createParser(str)) {
+            objct {
+                objct("rootObj") {
+                    val to = TempObject()
                     var f02: Int = -1
-                    objct {
-                        value("f01") { f01 = getValueAsString("") }
-                        value("f02") { f02 = getValueAsInt(-1) }
-                        onFinishRead { to.arr02.add(f01 to f02) }
+                    value("strVal01") { to.strVal01 = getValueAsString("") }
+                    array("strArr01") { value { to.arr01.add(getValueAsString("")) } }
+                    array("objArr01") {
+                        var f01: String = ""
+                        var f02: Int = -1
+                        objct {
+                            value("f01") { f01 = getValueAsString("") }
+                            value("f02") { f02 = getValueAsInt(-1) }
+                            onFinishRead { to.arr02.add(f01 to f02) }
+                        }
                     }
-                }
-                array("arrArr01") {
-                    var f02 = ""
-                    array {
-                        value { f02 = getValueAsString("") }
-                        onFinishRead { println("ExampleUnitTest.onFinishRead arr $f02") }
+                    array("arrArr01") {
+                        var f02 = ""
+                        array {
+                            value { f02 = getValueAsString("") }
+                            onFinishRead { println("ExampleUnitTest.onFinishRead arr $f02") }
+                        }
                     }
-                }
-                value("strVal02") { to.strVal02 = getValueAsString("") }
-                value("intVal01") { to.intVal01 = getValueAsInt(-1) }
+                    value("strVal02") { to.strVal02 = getValueAsString("") }
+                    value("intVal01") { to.intVal01 = getValueAsInt(-1) }
 ////            objct("obj02") {
 //            objct("obj01") {
 //                value("f01") { to.f01 = getValueAsString("") }
@@ -101,15 +99,18 @@ class JsonReaderUnitTest {
 //                onStartRead { println("ExampleUnitTest.onStartRead $it") }
 //                onFinishRead { println("ExampleUnitTest.onFinishRead $it") }
 //            }
-                value("obj01") {
-                    JsonReader.readObject(this) {
-                        value("f01") { to.f01 = "jr-" + getValueAsString("") }
-                        value("f02") { f02 = 10_000_000 + getValueAsInt(-1) }
+                    value("obj01") {
+                        JsonReader.read(this) {
+                            objct {
+                                value("f01") { to.f01 = "jr-" + getValueAsString("") }
+                                value("f02") { f02 = 10_000_000 + getValueAsInt(-1) }
+                            }
+                        }
                     }
+                    onFinishRead { println("ExampleUnitTest.onFinishRead $to $f02") }
                 }
-                onFinishRead { println("ExampleUnitTest.onFinishRead $to $f02") }
-            }
 //            }
+            }
         }
     }
 
@@ -151,19 +152,20 @@ class JsonReaderUnitTest {
           }
       ]
   ]"""
-        JsonReader.readArray(JsonFactory().createParser(strArr)) {
-            val res = mutableListOf<MutableList<String>>()
+        JsonReader.read(JsonFactory().createParser(strArr)) {
             array {
-                onStartRead { res.add(mutableListOf()) }
-                value { res.last().add(getValueAsString("")) }
+                val res = mutableListOf<MutableList<String>>()
+                array {
+                    onStartRead { res.add(mutableListOf()) }
+                    value { res.last().add(getValueAsString("")) }
+                }
+                onFinishRead { println("ExampleUnitTest.first cool entry point 2 $res") }
             }
-            onFinishRead { println("ExampleUnitTest.first cool entry point 2 $res") }
         }
-        JsonReader.readArray(JsonFactory().createParser(strObjArr)) {
-            val res = mutableListOf<MutableList<Pair<String, Int>>>()
-//            array {
-            value {
-                JsonReader.readArray(this) {
+        JsonReader.read(JsonFactory().createParser(strObjArr)) {
+            array {
+                val res = mutableListOf<MutableList<Pair<String, Int>>>()
+                array {
                     onStartRead { res.add(mutableListOf()) }
                     var f01 = "";
                     var f02 = -1
@@ -177,8 +179,8 @@ class JsonReaderUnitTest {
                         }
                     }
                 }
+                onFinishRead { println("ExampleUnitTest.first cool entry point 3 $res") }
             }
-            onFinishRead { println("ExampleUnitTest.first cool entry point 3 $res") }
         }
     }
 }
