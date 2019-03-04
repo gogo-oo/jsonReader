@@ -82,7 +82,7 @@ class ToParserOfJsonCheckRes {
                     }
                     array("arrObj01") {
                         objct {
-                            onStartRead { result.arrObj01.list += ToParserOfJsonCheckRes._arrObj01.ObjVal() }
+                            onStartRead { result.arrObj01.list += _arrObj01.ObjVal() }
                             value("f31") { result.arrObj01.list.last().f31 = getValueAsString(result.arrObj01.default.f31) }
                             value("f32") { result.arrObj01.list.last().f32 = getValueAsInt(result.arrObj01.default.f32) }
                         }
@@ -90,7 +90,7 @@ class ToParserOfJsonCheckRes {
                     array("arrArrObj01") {
                         array {
                             objct {
-                                onStartRead { result.arrArrObj01.list += ToParserOfJsonCheckRes._arrArrObj01.ObjVal() }
+                                onStartRead { result.arrArrObj01.list += _arrArrObj01.ObjVal() }
                                 value("f41") { result.arrArrObj01.list.last().f41 = getValueAsString(result.arrArrObj01.default.f41) }
                                 objct("f42") {
                                     value("f411") { result.arrArrObj01.list.last().f42.f411 = getValueAsString(result.arrArrObj01.list.last().f42.f411) }

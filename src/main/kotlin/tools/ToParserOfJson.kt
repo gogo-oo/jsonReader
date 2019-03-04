@@ -22,8 +22,7 @@ class ToParserOfJson {
             val assignment: String = "",
             val default: String = "",
             val fieldName: String = "",
-            val arrFieldName: String = "",
-            var rootClass: String = ""
+            val arrFieldName: String = ""
     ) {
         val jsonFieldName = if (fieldName.isNotEmpty()) """("$fieldName")""" else ""
     }
@@ -66,10 +65,6 @@ import tools.jsonReader.JsonReader
         }
 
         fun toJsonParser(itemDescription: Supported, params: Params = Params(), recurseCount: Int = 0): OutRes {
-            if (recurseCount == 0) {
-                params.rootClass = params.resultClass
-            }
-
             val tabString = "    "
             val tabStr = tabString.times(0) + tabString.times(recurseCount)
             val tabStR = tabString.times(4) + tabString.times(recurseCount)
@@ -80,20 +75,20 @@ import tools.jsonReader.JsonReader
                     result.outFirst += """${tabStr}class ${params.resultClass} {${'\n'}"""
                     result.outRead += "${tabStR}objct${params.jsonFieldName} {\n"
                     if (params.resultClass == ObjVal) {
-                        result.outRead += "$tabString${tabStR}onStartRead { ${params.resultStr}.list += ${params.rootClass}._${params.arrFieldName}.$ObjVal() }\n"
+                        result.outRead += "$tabString${tabStR}onStartRead { ${params.resultStr}.list += _${params.arrFieldName}.$ObjVal() }\n"
                     }
 
                     val itemResultOutVal = StringBuilder()
                     for ((name, item) in itemDescription.fields) {
                         val resStr = if (params.resultClass == ObjVal) """${params.resultStr}.list.last().$name""" else """${params.resultStr}.$name"""
                         val defStr = if (params.resultClass == ObjVal) """${params.resultStr}.default.$name""" else """${params.resultStr}.$name"""
-                        val itemResult = toJsonParser(item, Params("_$name", resStr, " =", defStr, name, name, rootClass = params.rootClass), recurseCount + 1)
+                        val itemResult = toJsonParser(item, Params("_$name", resStr, " =", defStr, name, name), recurseCount + 1)
                         result.outFirst += itemResult.outFirst
                         itemResultOutVal += itemResult.outVal_
                         result.outRead += itemResult.outRead
                     }
                     result.outFirst += itemResultOutVal
-                    if (params.resultClass != params.rootClass) {
+                    if (recurseCount != 0) {
                         result.outFirst += "$tabStr}\n"
                         if (params.resultClass != ObjVal) result.outFirst += "\n"
                         result.outVal_ += "${tabStr}val ${if (params.fieldName.isNotEmpty()) params.fieldName else params.resultStr} = ${params.resultClass}()\n"
@@ -111,8 +106,7 @@ import tools.jsonReader.JsonReader
                         //result.outRead += "${tabStr}${tabString}onStartRead { ${params.resultStr}.dimension.add(${params.resultStr}.list.size) }\n"
                         val itemResult = toJsonParser(
                                 item,
-                                Params(ObjVal, params.resultStr, ".list +=", "${params.resultStr}.default", "", params.arrFieldName, rootClass = params.rootClass),
-                                recurseCount + 1
+                                Params(ObjVal, params.resultStr, ".list +=", "${params.resultStr}.default", "", params.arrFieldName), recurseCount + 1
                         )
                         when (item) {
                             is Obj, is Scalar -> {
