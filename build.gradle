@@ -20,4 +20,5 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core:2.9.8'
 
     testImplementation 'junit:junit:4.12'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
 }
