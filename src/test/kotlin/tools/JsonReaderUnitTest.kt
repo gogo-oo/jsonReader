@@ -1,5 +1,8 @@
+package tools
+
 import com.fasterxml.jackson.core.JsonFactory
 import org.junit.Test
+import tools.jsonReader.JsonReader
 
 //    testImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.8'
 //
