@@ -27,20 +27,58 @@ class ToParserOfJsonCheck {
         "f221":1025
     }
   },
-
-  "arrVal01": [1001],
-  "arrArrVal01": [[1001]],
   "arrObj01": [{
     "f31":"val015",
     "f32":1025
   }],
-  "arrArrObj01": [[{
+  "arrVal01": [1001]
+  ,
+  "arrArrVal01": [
+  [1001,1002,1003,1004],
+  [2001,2002,2003,2004],
+  [3001,3002,3003,3004]
+  ]  ,
+  "arrArrObj01": [
+  [{
     "f41":"val015",
     "f42":{
         "f411":"val015",
-        "f421":1025
+        "f421":1025,
+        "FarrArrVal01": [
+  [1001,1002,1003,1004],
+  [2001,2002,2003,2004],
+  [3001,3002,3003,3004]
+  ]
     }
-  }]]
+  },
+  {
+    "f41":"val015",
+    "f42":{
+
+    }
+  }],
+    [{
+    "f41":"val115"
+
+  },
+  {
+
+  }],
+    [{
+    "f41":"val215",
+    "f42":{
+        "f411":"val215"
+
+    }
+  },
+  {
+    "f42":{
+        "f421":1225
+    }
+  }]
+
+
+  ]
 
 }"""
 
@@ -73,8 +111,8 @@ class ToParserOfJsonCheck {
         if (descJsonStr01 is Supported) {
             val outRes = ToParserOfJson.toJsonParser(descJsonStr01)
             println(outRes.outFirst)
-            println(outRes.outVal_)
-            println(outRes.outRead)
+            println(outRes.outVal__)
+            println(outRes.outRead_)
 
             val className = "ToParserOfJsonCheckRes"
             val outFile = File("tmp/$className.kt").apply { parentFile.mkdirs() }
