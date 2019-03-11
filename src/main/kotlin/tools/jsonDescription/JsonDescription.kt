@@ -24,16 +24,16 @@ sealed class Scalar : Supported() {
     override fun toString(): String = this.simple.toString()
 }
 
-object Str : Scalar()
+object Str_ : Scalar()
 object Int_ : Scalar()
-object Float : Scalar()
+object Flt_ : Scalar()//Float
 object Bool : Scalar()
 
 val Scalar.simple: Any
     get() = when (this) {
-        Str -> ""
+        Str_ -> ""
         Int_ -> 1
-        Float -> 1.0
+        Flt_ -> 1.0
         Bool -> true
     }
 
@@ -60,7 +60,7 @@ fun Supported.toJsonString(): String {
         }
         is Arr -> res += itemDescription.itemTypes.joinToString(separator, "[", "]") { it.toJsonString() }
         is Scalar -> when (itemDescription) {
-            Str -> {
+            Str_ -> {
                 res += "\""
                 res += itemDescription.simple
                 res += "\""
@@ -77,9 +77,9 @@ fun readJsonItemDescription(jsonParser: JsonParser): JsonItemDescription {
         jsonParser.nextToken()
     }
     when (jsonParser.currentToken) {
-        JsonToken.VALUE_STRING -> return Str
+        JsonToken.VALUE_STRING -> return Str_
         JsonToken.VALUE_NUMBER_INT -> return Int_
-        JsonToken.VALUE_NUMBER_FLOAT -> return Float
+        JsonToken.VALUE_NUMBER_FLOAT -> return Flt_
         JsonToken.VALUE_TRUE, JsonToken.VALUE_FALSE -> return Bool
         JsonToken.START_OBJECT -> {
             val res = Obj()

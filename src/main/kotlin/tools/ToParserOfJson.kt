@@ -1,7 +1,6 @@
 package tools
 
 import tools.jsonDescription.*
-import tools.jsonDescription.Float
 import tools.stringUtil.plusAssign
 import tools.stringUtil.times
 
@@ -9,7 +8,7 @@ class ToParserOfJson {
     class JPath(val params: Params = Params(), val items: Array<Item> = emptyArray()) {
         class Item(val name: String, val type: Supported, val parent: Item? = null) {
             companion object {
-                val empty = Item("", Str)
+                val empty = Item("", Str_)
             }
 
             val className = "_$name"
@@ -64,9 +63,9 @@ class ToParserOfJson {
         const val ObjVal = "ObjVal"
 
         fun Scalar.description() = when (this) {
-            Str -> ScalarDescription("String", "\"\"", "getValueAsString")
+            Str_ -> ScalarDescription("String", "\"\"", "getValueAsString")
             Int_ -> ScalarDescription("Int", "-1", "getValueAsInt")
-            Float -> ScalarDescription("Double", "-1.0", "getValueAsDouble")
+            Flt_ -> ScalarDescription("Double", "-1.0", "getValueAsDouble")
             Bool -> ScalarDescription("Boolean", "false", "getValueAsBoolean")
         }
 
