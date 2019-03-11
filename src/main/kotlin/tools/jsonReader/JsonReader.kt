@@ -16,17 +16,17 @@ class JsonReader {
         @DslMarker
         annotation class JsonReaderArrMarker
 
-        fun read(jsonParser: JsonParser, configureBlock: JsonReader.Item.() -> Unit) {
-            val reader = JsonReader.Item()
+        fun read(jsonParser: JsonParser, configureBlock: Item.() -> Unit) {
+            val reader = Item()
             reader.configureBlock()
             if (null != reader.objBlockReader) {
-                if (jsonParser.currentToken() != JsonToken.START_OBJECT) {
+                if (jsonParser.currentToken != JsonToken.START_OBJECT) {
                     if (jsonParser.nextToken() != JsonToken.START_OBJECT) {
                         throw IOException("Error: START_OBJECT expected.")
                     }
                 }
             } else if (null != reader.arrBlockReader) {
-                if (jsonParser.currentToken() != JsonToken.START_ARRAY) {
+                if (jsonParser.currentToken != JsonToken.START_ARRAY) {
                     if (jsonParser.nextToken() != JsonToken.START_ARRAY) {
                         throw IOException("Error: START_ARRAY expected.")
                     }
@@ -35,10 +35,6 @@ class JsonReader {
                 throw IOException("Error: 'objct {...}' or 'array {...}' configure block expected.")
             }
             reader.read(jsonParser)
-        }
-
-        private fun log(str: String) {
-//                println(str)
         }
     }
 
@@ -61,7 +57,6 @@ class JsonReader {
         }
 
         fun read(jsonParser: JsonParser) {
-            log("read i0 ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
             if (null != valueBlockReader) {
                 valueBlockReader?.invoke(jsonParser)
             } else {
@@ -106,10 +101,9 @@ class JsonReader {
         }
 
         fun read(jsonParser: JsonParser) {
-            if (jsonParser.currentToken() != JsonToken.START_ARRAY) {
+            if (jsonParser.currentToken != JsonToken.START_ARRAY) {
                 throw IOException("Error: START_ARRAY expected.")
             }
-            log("read a0 ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
             onStartReadBlock?.invoke()
             while (jsonParser.nextToken() != JsonToken.END_ARRAY) {
                 itemReader.read(jsonParser)
@@ -122,6 +116,7 @@ class JsonReader {
     class Obj {
         private val map = hashMapOf<String, Item>()
         private var onStartReadBlock: ((String) -> Unit)? = null
+        private var onFinishReadBlock: ((String) -> Unit)? = null
 
         private fun itemReader(name: String): Item {
             var result = map[name]
@@ -131,8 +126,6 @@ class JsonReader {
             }
             return result
         }
-
-        private var onFinishReadBlock: ((String) -> Unit)? = null
 
         fun onStartRead(function: (String) -> Unit) {
             onStartReadBlock = function
@@ -155,17 +148,14 @@ class JsonReader {
         }
 
         fun read(jsonParser: JsonParser) {
-            if (jsonParser.currentToken() != JsonToken.START_OBJECT) {
+            if (jsonParser.currentToken != JsonToken.START_OBJECT) {
                 throw IOException("Error: START_OBJECT expected.")
             }
-            log("read o0 ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
             val thisFieldName = jsonParser.currentName ?: ""
             onStartReadBlock?.invoke(thisFieldName)
             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
                 val fieldName = jsonParser.currentName
-                log("read  of ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
                 jsonParser.nextToken()
-                log("read ov ${jsonParser.currentToken()} ${jsonParser.currentName} ${jsonParser.getValueAsString("")}")
                 val itemReader = map[fieldName]
                 if (null != itemReader) {
                     itemReader.read(jsonParser)
