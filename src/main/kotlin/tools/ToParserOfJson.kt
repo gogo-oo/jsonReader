@@ -21,7 +21,16 @@ class ToParserOfJson {
         val jsonFieldName = if (lastItem.name.isNotEmpty()) """("${lastItem.name}")""" else ""
         val resultStr = "${params.resultProp}.${items.joinToString(".") { if (it.isParentArray) "list.last()" else it.name }}".replace("${params.resultProp}..", "${params.resultProp}.")
         val resultStrOnStartReadObj = "${params.resultProp}.${items.joinToString(".") { it.name }}".replace("${params.resultProp}..", "${params.resultProp}.").replace("..", ".list.last().")
-        val default = "${params.resultProp}.${items.joinToString(".") { if (it.isParentArray) "default" else it.name }}".replace("${params.resultProp}..", "${params.resultProp}.").replace("..", ".list.last().")
+        val default = "${params.resultProp}.${items.joinToString(".") { if (it.isParentArray) "defaultVal" else it.name }}".replace("${params.resultProp}..", "${params.resultProp}.").replace("..", ".list.last().")
+        val pathStr
+            get() = StringBuilder().apply {
+                for (item in items) {
+                    if (item.name.isNotEmpty()) {
+                        append('.')
+                        append(item.name)
+                    }
+                }
+            }.toString()
         //                val className = if (lastItem != Item.empty) lastItem.className else params.resultClass
         val className = if (lastItem == Item.empty) params.resultClass else if (items.size >= 2 && items[items.size - 2].type is Arr) ObjVal else lastItem.className
         val classNameFull: String
@@ -51,6 +60,8 @@ class ToParserOfJson {
     }
 
     class Params(val resultClass: String = "Res", val resultProp: String = "result") {
+        val hasPathStr = false
+
         companion object {
             val empty = Params()
         }
@@ -103,13 +114,14 @@ import tools.jsonReader.JsonReader
         }
 
         fun toJsonParser(itemDescription: Supported, params: Params = Params.empty, path: JPath = JPath(params), innerArray: Boolean = false): OutRes {
+            val pathStr = if (params.hasPathStr) " // ${path.pathStr}" else ""
             val tabString = "    "
             val tabStr = tabString.times(0) + tabString.times(path.size)
             val tabStR = tabString.times(4) + tabString.times(path.size)
             val result = OutRes()
             when (itemDescription) {
                 is Obj -> {
-                    result.outFirst += """${tabStr}class ${path.className} {${'\n'}"""
+                    result.outFirst += "${tabStr}class ${path.className} {\n"
                     result.outRead_ += "${tabStR}objct${path.jsonFieldName} {\n"
                     if (path.lastItem.isParentArray) {
                         result.outRead_ += "$tabString${tabStR}onStartRead { ${path.resultStrOnStartReadObj}list += ${path.classNameFull}() }\n"
@@ -125,7 +137,7 @@ import tools.jsonReader.JsonReader
                     if (path.size != 0) {
                         result.outFirst += "$tabStr}\n"
                         if (!path.lastItem.isParentArray) result.outFirst += "\n"
-                        result.outVal__ += "${tabStr}val ${path.fieldName} = ${path.className}()\n"
+                        result.outVal__ += "${tabStr}val ${path.fieldName} = ${path.className}()${pathStr}\n"
                     }
                     result.outRead_ += "$tabStR}\n"
                 }
@@ -150,7 +162,7 @@ import tools.jsonReader.JsonReader
                                 when (item) {
                                     is Obj -> {
                                         val itemResult = toJsonParser(item, path = newPath)
-                                        result.outFirst += """${tabStr}class ${path.className}(val list: MutableList<$ObjVal> = mutableListOf()$rowCounts, val default: $ObjVal = $ObjVal()) {${'\n'}"""
+                                        result.outFirst += "${tabStr}class ${path.className}(val list: MutableList<$ObjVal> = mutableListOf()$rowCounts, val defaultVal: $ObjVal = $ObjVal()) {\n"
                                         result.outFirst += itemResult.outFirst
                                         if (path.size != 0) {
                                             result.outFirst += "$tabStr}\n\n"
@@ -159,12 +171,12 @@ import tools.jsonReader.JsonReader
                                     }
                                     is Scalar -> {
                                         val desc = item.description()
-                                        result.outFirst += "${tabStr}class ${path.className}(val list: MutableList<${desc.scalarName}> = mutableListOf()$rowCounts, val default: ${desc.scalarName} = ${desc.defaultValue})\n"
-                                        result.outRead_ += "$tabString${tabStR}value${newPath.jsonFieldName} { ${path.resultStr}.list += ${desc.getValueAsScalar}(${path.resultStr}.default) }\n"
+                                        result.outFirst += "${tabStr}class ${path.className}(val list: MutableList<${desc.scalarName}> = mutableListOf()$rowCounts, val defaultVal: ${desc.scalarName} = ${desc.defaultValue})\n"
+                                        result.outRead_ += "$tabString${tabStR}value${newPath.jsonFieldName} { ${path.resultStr}.list += ${desc.getValueAsScalar}(${path.resultStr}.defaultVal) }\n"
                                     }
                                 }
                                 if (path.size != 0) {
-                                    result.outVal__ += "${tabStr}val ${path.fieldName} = ${path.className}()\n"
+                                    result.outVal__ += "${tabStr}val ${path.fieldName} = ${path.className}()${pathStr}\n"
                                 }
                             }
                             is Arr -> {
@@ -183,7 +195,7 @@ import tools.jsonReader.JsonReader
                 }
                 is Scalar -> {
                     val desc = itemDescription.description()
-                    result.outVal__ += "${tabStr}var ${path.fieldName} = ${desc.defaultValue}\n"
+                    result.outVal__ += "${tabStr}var ${path.fieldName} = ${desc.defaultValue}${pathStr}\n"
                     result.outRead_ += "${tabStR}value${path.jsonFieldName} { ${path.resultStr} = ${desc.getValueAsScalar}(${path.default}) }\n"
                 }
             }

@@ -19,19 +19,19 @@ class ToParserOfJsonCheckRes {
         val f22 = _f22()
     }
 
-    class _arrObj01(val list: MutableList<ObjVal> = mutableListOf(), val default: ObjVal = ObjVal()) {
+    class _arrObj01(val list: MutableList<ObjVal> = mutableListOf(), val defaultVal: ObjVal = ObjVal()) {
         class ObjVal {
             var f31 = ""
             var f32 = -1
         }
     }
 
-    class _arrVal01(val list: MutableList<Int> = mutableListOf(), val default: Int = -1)
-    class _arrArrVal01(val list: MutableList<Int> = mutableListOf(), val rowCounts: MutableList<Int> = mutableListOf(), val default: Int = -1)
-    class _arrArrObj01(val list: MutableList<ObjVal> = mutableListOf(), val rowCounts: MutableList<Int> = mutableListOf(), val default: ObjVal = ObjVal()) {
+    class _arrVal01(val list: MutableList<Int> = mutableListOf(), val defaultVal: Int = -1)
+    class _arrArrVal01(val list: MutableList<Int> = mutableListOf(), val rowCounts: MutableList<Int> = mutableListOf(), val defaultVal: Int = -1)
+    class _arrArrObj01(val list: MutableList<ObjVal> = mutableListOf(), val rowCounts: MutableList<Int> = mutableListOf(), val defaultVal: ObjVal = ObjVal()) {
         class ObjVal {
             class _f42 {
-                class _FarrArrVal01(val list: MutableList<Int> = mutableListOf(), val rowCounts: MutableList<Int> = mutableListOf(), val default: Int = -1)
+                class _FarrArrVal01(val list: MutableList<Int> = mutableListOf(), val rowCounts: MutableList<Int> = mutableListOf(), val defaultVal: Int = -1)
 
                 var f411 = "--"
                 var f421 = -12
@@ -78,16 +78,16 @@ class ToParserOfJsonCheckRes {
                     array("arrObj01") {
                         objct {
                             onStartRead { result.arrObj01.list += _arrObj01.ObjVal() }
-                            value("f31") { result.arrObj01.list.last().f31 = getValueAsString(result.arrObj01.default.f31) }
-                            value("f32") { result.arrObj01.list.last().f32 = getValueAsInt(result.arrObj01.default.f32) }
+                            value("f31") { result.arrObj01.list.last().f31 = getValueAsString(result.arrObj01.defaultVal.f31) }
+                            value("f32") { result.arrObj01.list.last().f32 = getValueAsInt(result.arrObj01.defaultVal.f32) }
                         }
                     }
                     array("arrVal01") {
-                        value { result.arrVal01.list += getValueAsInt(result.arrVal01.default) }
+                        value { result.arrVal01.list += getValueAsInt(result.arrVal01.defaultVal) }
                     }
                     array("arrArrVal01") {
                         array {
-                            value { result.arrArrVal01.list += getValueAsInt(result.arrArrVal01.default) }
+                            value { result.arrArrVal01.list += getValueAsInt(result.arrArrVal01.defaultVal) }
                             onFinishRead { result.arrArrVal01.rowCounts.add(result.arrArrVal01.list.size) }
                         }
                     }
@@ -95,13 +95,13 @@ class ToParserOfJsonCheckRes {
                         array {
                             objct {
                                 onStartRead { result.arrArrObj01.list += _arrArrObj01.ObjVal() }
-                                value("f41") { result.arrArrObj01.list.last().f41 = getValueAsString(result.arrArrObj01.default.f41) }
+                                value("f41") { result.arrArrObj01.list.last().f41 = getValueAsString(result.arrArrObj01.defaultVal.f41) }
                                 objct("f42") {
-                                    value("f411") { result.arrArrObj01.list.last().f42.f411 = getValueAsString(result.arrArrObj01.default.f42.f411) }
-                                    value("f421") { result.arrArrObj01.list.last().f42.f421 = getValueAsInt(result.arrArrObj01.default.f42.f421) }
+                                    value("f411") { result.arrArrObj01.list.last().f42.f411 = getValueAsString(result.arrArrObj01.defaultVal.f42.f411) }
+                                    value("f421") { result.arrArrObj01.list.last().f42.f421 = getValueAsInt(result.arrArrObj01.defaultVal.f42.f421) }
                                     array("FarrArrVal01") {
                                         array {
-                                            value { result.arrArrObj01.list.last().f42.FarrArrVal01.list += getValueAsInt(result.arrArrObj01.list.last().f42.FarrArrVal01.default) }
+                                            value { result.arrArrObj01.list.last().f42.FarrArrVal01.list += getValueAsInt(result.arrArrObj01.list.last().f42.FarrArrVal01.defaultVal) }
                                             onFinishRead { result.arrArrObj01.list.last().f42.FarrArrVal01.rowCounts.add(result.arrArrObj01.list.last().f42.FarrArrVal01.list.size) }
                                         }
                                     }
